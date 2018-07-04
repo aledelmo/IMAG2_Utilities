@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 
+import argparse
 import os
 import sys
-import vtk
-import argparse
-import numpy as np
 from itertools import izip
-from vtk.util import numpy_support as ns
-from nibabel.streamlines.trk import TrkFile as tv
+
+import numpy as np
+import vtk
 from nibabel.streamlines.tck import TckFile as tck
 from nibabel.streamlines.tractogram import Tractogram
+from nibabel.streamlines.trk import TrkFile as tv
+from vtk.util import numpy_support as ns
+
 
 def main():
     in_file, out_format = setup()
@@ -20,7 +22,7 @@ def main():
         streamlines, _ = read_trk(in_file)
     else:
         streamlines, _ = read_tck(in_file)
-	
+
     file_name, _ = os.path.splitext(in_file)
     if out_format == 'vtk':
         save_vtk(file_name + '.vtk', streamlines)
@@ -140,7 +142,7 @@ def save_vtk(filename, tracts, lines_indices=None):
     line_starts = ns.numpy.r_[0, ns.numpy.cumsum(lengths)]
     if lines_indices is None:
         lines_indices = [ns.numpy.arange(length) + line_start for length, line_start in izip(lengths, line_starts)]
-	
+
     ids = ns.numpy.hstack([ns.numpy.r_[c[0], c[1]] for c in izip(lengths, lines_indices)])
     vtk_ids = ns.numpy_to_vtkIdTypeArray(ids.astype('int64'), deep=True)
 
