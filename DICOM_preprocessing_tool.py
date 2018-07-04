@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import argparse
-import shlex
 import os
-import tempfile
+import shlex
 import shutil
+import sys
+import tempfile
+from subprocess import (Popen, PIPE, call)
+from time import time
+
 import pydicom
 from joblib import cpu_count
-from time import time
-from subprocess import (Popen, PIPE, call)
 
 
 def main():

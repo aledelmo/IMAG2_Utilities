@@ -1,9 +1,10 @@
+import argparse
 import os
 import sys
+
 import cv2
 import nrrd
 import numpy as np
-import argparse
 
 
 def nothing(_):

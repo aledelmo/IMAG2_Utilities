@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import sys
-import os.path
-import pydicom
 import argparse
+import os.path
+import sys
+
+import pydicom
 
 try:
     from os import scandir, walk
