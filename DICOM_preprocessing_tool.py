@@ -13,6 +13,9 @@ from time import time
 import pydicom
 from joblib import cpu_count
 
+__author__ = 'Alessandro Delmonte'
+__email__ = 'delmonte.ale92@gmail.com'
+
 
 def main():
     in_folder, mask, basename, quiet = setup()
@@ -22,23 +25,23 @@ def main():
         sys.stdout = open(os.devnull, 'w')
         sys.stderr = open(os.devnull, 'w')
 
-    #### PIPELINE ####
     start = time()
 
-    lstFilesDCM = []
+    dicom_list = []
     for dirName, subdirList, fileList in os.walk(in_folder):
         for filename in fileList:
-            lstFilesDCM.append(os.path.join(dirName, filename))
-    RefDs = pydicom.dcmread(lstFilesDCM[0])
-    if RefDs.InPlanePhaseEncodingDirection == 'COL':
-        phase_encoding_direction = 'AP '
-    elif RefDs.InPlanePhaseEncodingDirection == 'ROW':
-        phase_encoding_direction = 'LR '
-    else:
+            dicom_list.append(os.path.join(dirName, filename))
+    reference = pydicom.dcmread(dicom_list[0])
+    try:
+        if reference.InPlanePhaseEncodingDirection == 'COL':
+            phase_encoding_direction = 'AP '
+        elif reference.InPlanePhaseEncodingDirection == 'ROW':
+            phase_encoding_direction = 'LR '
+    except:
         raise AttributeError('No Phase Encoding Direction Information.')
 
     try:
-        diff_dir = RefDs[0x0019, 0x10e0].value
+        diff_dir = reference[0x0019, 0x10e0].value
         diff_dir = int(diff_dir)
     except:
         raise AttributeError('Wrong number of diffusion direction.')
@@ -50,9 +53,8 @@ def main():
 
     # DENOISING
     if mask:
-        pipe('dwidenoise ' + in_folder + ' ' + os.path.join(tmp,
-                                                            basename + '_denoise.mif') + ' -extent ' + win_size + ' -mask ' + mask,
-             True)
+        pipe('dwidenoise ' + in_folder + ' ' + os.path.join(tmp, basename + '_denoise.mif') + ' -extent ' +
+             win_size + ' -mask ' + mask, True)
     else:
         pipe('dwidenoise ' + in_folder + ' ' + os.path.join(tmp, basename + '_denoise.mif') + ' -extent ' + win_size,
              True)
@@ -60,32 +62,25 @@ def main():
     pipe('mrdegibbs ' + os.path.join(tmp, basename + '_denoise.mif') + ' ' +
          os.path.join(tmp, basename + '_de_n_g.mif'), True)
     # MOTION AND EDDY CURRENTS CORRECTION
-    # rpe_none: no reversed phase-encoding information (no distortion correction)
-    # rpe_header: check phase encoding in the header
     num_cores = str(cpu_count())
-    pipe(
-        'dwipreproc -nthreads ' + num_cores + ' -tempdir ' + tmp + ' -rpe_none -pe_dir ' + phase_encoding_direction + os.path.join(
-            tmp,
-            basename + '_de_n_g.mif') + ' ' + os.path.join(
-            tmp,
-            basename + '_denoise_preproc.mif'),
-        True)
-
+    pipe('dwipreproc -nthreads ' + num_cores + ' -tempdir ' + tmp + ' -rpe_none -pe_dir ' + phase_encoding_direction +
+         os.path.join(tmp, basename + '_de_n_g.mif') + ' ' + os.path.join(tmp, basename + '_denoise_preproc.mif'),
+         True)
     # BIAS CORRECTION (N4 ANTs)
-    pipe('dwibiascorrect -ants ' + os.path.join(tmp, basename + '_denoise_preproc.mif') + ' ' + os.path.join(tmp,
-                                                                                                             basename + '_ready.mif'))
-    pipe('mrconvert ' + os.path.join(tmp, basename + '_ready.mif') + ' ' + os.path.join(os.getcwd(),
-                                                                                        basename + '_preprocessed.nii.gz') + ' -export_grad_fsl ' + os.path.join(
-        os.getcwd(), basename + '.bvec') + ' ' + os.path.join(os.getcwd(), basename + '.bval'), True)
+    pipe('dwibiascorrect -ants ' + os.path.join(tmp, basename + '_denoise_preproc.mif') + ' ' +
+         os.path.join(tmp, basename + '_ready.mif'))
+    pipe('mrconvert ' + os.path.join(tmp, basename + '_ready.mif') + ' ' +
+         os.path.join(os.getcwd(), basename + '_preprocessed.nii.gz') + ' -export_grad_fsl ' +
+         os.path.join(os.getcwd(), basename + '.bvec') + ' ' + os.path.join(os.getcwd(), basename + '.bval'), True)
 
-    print ('Total runtime: %.2f m.' % ((time() - start) / 60.))
+    print('Total runtime: %.2f m.' % ((time() - start) / 60.))
 
     shutil.rmtree(tmp)
 
 
 def pipe(cmd, verbose=False, topipe=False):
     if verbose:
-        print 'Executing command: ' + str(cmd) + '\n'
+        print('Executing command: ' + str(cmd) + '\n')
     if topipe:
         p = Popen(cmd, shell=True, stdin=None, stdout=PIPE, stderr=PIPE)
         [stdout, stderr] = p.communicate()
