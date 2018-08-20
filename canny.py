@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import argparse
 import os
 import sys
@@ -6,6 +9,9 @@ import cv2
 import nrrd
 import numpy as np
 
+
+__author__ = 'Alessandro Delmonte'
+__email__ = 'delmonte.ale92@gmail.com'
 
 def nothing(_):
     pass
@@ -52,7 +58,7 @@ def setup():
 
 def check_ext(value):
     filename, file_extension = os.path.splitext(value)
-    if file_extension in ('.nrrd'):
+    if file_extension == '.nrrd':
         return value
     else:
         raise argparse.ArgumentTypeError(
