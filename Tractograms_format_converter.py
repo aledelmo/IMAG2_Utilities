@@ -1,16 +1,24 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import argparse
 import os
 import sys
-from itertools import izip
-
+from builtins import range
 import numpy as np
 import vtk
 from nibabel.streamlines.tck import TckFile as tck
 from nibabel.streamlines.tractogram import Tractogram
 from nibabel.streamlines.trk import TrkFile as tv
 from vtk.util import numpy_support as ns
+
+try:
+    from itertools import izip as zip
+except ImportError:
+    pass
+
+__author__ = 'Alessandro Delmonte'
+__email__ = 'delmonte.ale92@gmail.com'
 
 
 def main():
@@ -77,10 +85,8 @@ def read_vtk(filename):
 
 
 def vtkPolyData_to_tracts(polydata):
-    result = {}
-    result['lines'] = ns.vtk_to_numpy(polydata.GetLines().GetData())
-    result['points'] = ns.vtk_to_numpy(polydata.GetPoints().GetData())
-    result['numberOfLines'] = polydata.GetNumberOfLines()
+    result = {'lines': ns.vtk_to_numpy(polydata.GetLines().GetData()),
+              'points': ns.vtk_to_numpy(polydata.GetPoints().GetData()), 'numberOfLines': polydata.GetNumberOfLines()}
 
     data = {}
     if polydata.GetPointData().GetScalars():
@@ -90,7 +96,7 @@ def vtkPolyData_to_tracts(polydata):
     if polydata.GetPointData().GetTensors():
         data['ActiveTensors'] = polydata.GetPointData().GetTensors().GetName()
 
-    for i in xrange(polydata.GetPointData().GetNumberOfArrays()):
+    for i in range(polydata.GetPointData().GetNumberOfArrays()):
         array = polydata.GetPointData().GetArray(i)
         np_array = ns.vtk_to_numpy(array)
         if np_array.ndim == 1:
@@ -104,7 +110,7 @@ def vtkPolyData_to_tracts(polydata):
 
 
 def vtkPolyData_dictionary_to_tracts_and_data(dictionary):
-    dictionary_keys = set(('lines', 'points', 'numberOfLines'))
+    dictionary_keys = {'lines', 'points', 'numberOfLines'}
     if not dictionary_keys.issubset(dictionary.keys()):
         raise ValueError("Dictionary must have the keys lines and points" + repr(dictionary.keys()))
 
@@ -117,7 +123,7 @@ def vtkPolyData_dictionary_to_tracts_and_data(dictionary):
     actual_line_index = 0
     number_of_tracts = dictionary['numberOfLines']
     original_lines = []
-    for l in xrange(number_of_tracts):
+    for l in range(number_of_tracts):
         tracts.append(points[lines[actual_line_index + 1:actual_line_index + lines[actual_line_index] + 1]])
         original_lines.append(
             np.array(lines[actual_line_index + 1:actual_line_index + lines[actual_line_index] + 1], copy=True))
@@ -128,7 +134,7 @@ def vtkPolyData_dictionary_to_tracts_and_data(dictionary):
 
         for k in point_data_keys:
             array_data = dictionary['pointData'][k]
-            if not k in tract_data:
+            if k not in tract_data:
                 tract_data[k] = [array_data[f] for f in original_lines]
             else:
                 np.vstack(tract_data[k])
@@ -141,9 +147,9 @@ def save_vtk(filename, tracts, lines_indices=None):
     lengths = [len(p) for p in tracts]
     line_starts = ns.numpy.r_[0, ns.numpy.cumsum(lengths)]
     if lines_indices is None:
-        lines_indices = [ns.numpy.arange(length) + line_start for length, line_start in izip(lengths, line_starts)]
+        lines_indices = [ns.numpy.arange(length) + line_start for length, line_start in zip(lengths, line_starts)]
 
-    ids = ns.numpy.hstack([ns.numpy.r_[c[0], c[1]] for c in izip(lengths, lines_indices)])
+    ids = ns.numpy.hstack([ns.numpy.r_[c[0], c[1]] for c in zip(lengths, lines_indices)])
     vtk_ids = ns.numpy_to_vtkIdTypeArray(ids.astype('int64'), deep=True)
 
     cell_array = vtk.vtkCellArray()
