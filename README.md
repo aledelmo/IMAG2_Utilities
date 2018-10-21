@@ -78,13 +78,18 @@ $ python tracto_converter.py ~/Desktop/coroT2Cube.nrrd
 
 ## Other repositories
 
-These scripts serves as support for different tools. They can be complemented by:
+These scripts serve as support for different tools. They can be complemented by:
 * [3DSlicer Plug-ins]: segmentation and diffusion extension for 3DSlicer
 * [PQL]: the first ever method for the segmentation of pelvic tractograms.
 * [Tractography Metrics]: tool for the analysis of fiber bundles.
 * [Vessel Segmentation]: deep-learning based approach for the automatic recognition of veins and arteries.
 * [IMAG2 Website]: completely redesigned team website (<https://aledelmo.000webhostapp.com>)
 
+
+ License
+----
+
+Apache License 2.0
 
 [//]: #
    [3DSlicer Plug-ins]: <https://github.com/aledelmo/3DSlicer_Plugins>
