@@ -83,7 +83,8 @@ These scripts serve as support for different tools. They can be complemented by:
 * [PQL]: the first ever method for the segmentation of pelvic tractograms.
 * [Tractography Metrics]: tool for the analysis of fiber bundles.
 * [Vessel Segmentation]: deep-learning based approach for the automatic recognition of veins and arteries.
-* [IMAG2 Website]: completely redesigned team website (<https://aledelmo.000webhostapp.com>)
+* [IMAG2 Website]: completely redesigned team website (<http://www.imag2.org>)
+* [IMAG2 Docs]: general and process documentation
 
 
  License
@@ -99,3 +100,4 @@ Apache License 2.0
    [IMAG2 Utilities]: <https://github.com/aledelmo/IMAG2_Utilities>
    [IMAG2 Website]: <https://github.com/aledelmo/IMAG2_Website>
    [DiffusionPelvis]: <https://github.com/aledelmo/3DSlicer_Plugins/tree/master/DiffusionPelvis>
+   [IMAG2 Docs]: <https://github.com/aledelmo/IMAG2_docs>
