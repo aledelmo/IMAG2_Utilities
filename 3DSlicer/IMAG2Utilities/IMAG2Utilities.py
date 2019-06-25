@@ -4,7 +4,7 @@ import random
 import string
 import unittest
 from builtins import range
-
+import glob
 import ctk
 import numpy as np
 import pydicom
@@ -16,6 +16,9 @@ from nibabel.streamlines.tck import TckFile as tck
 from nibabel.streamlines.tractogram import Tractogram
 from nibabel.streamlines.trk import TrkFile as tv
 from vtk.util import numpy_support as ns
+from nibabel.affines import apply_affine
+from dipy.tracking.streamline import values_from_volume
+import nibabel as nib
 
 try:
     from os import scandir, walk
@@ -146,10 +149,31 @@ class IMAG2UtilitiesWidget:
         self.anonim_button.connect('clicked(bool)', self.on_anonim_button)
         anonim_form_layout.addRow(self.anonim_button)
 
+        split_collapsible_button = ctk.ctkCollapsibleButton()
+        split_collapsible_button.text = 'Split Tractograms'
+
+        self.layout.addWidget(split_collapsible_button)
+
+        split_form_layout = qt.QFormLayout(split_collapsible_button)
+
+        label_split = qt.QLabel()
+        label_split.setText(
+            "Split tractograms in left/right components using sacral holes segmentation.<br>")
+        split_form_layout.addRow(label_split)
+
+        self.dialogfolderbutton_split = ctk.ctkDirectoryButton()
+        self.dir_split = None
+        self.dialogfolderbutton_split.connect('directoryChanged(const QString&)', self.onApplydialogfolderbuttonsplit)
+        split_form_layout.addRow('DICOM Folder:', self.dialogfolderbutton_split)
+
+        self.split_button = qt.QPushButton('Split')
+        self.split_button.enabled = True
+        self.split_button.connect('clicked(bool)', self.on_split_button)
+        split_form_layout.addRow(self.split_button)
+
         self.layout.addStretch(1)
 
         if self.developerMode:
-
             def create_hor_layout(elements):
                 widget = qt.QWidget()
                 row_layout = qt.QHBoxLayout()
@@ -189,8 +213,10 @@ class IMAG2UtilitiesWidget:
     def onApplydialogfolderbutton(self):
         self.dir = self.dialogfolderbutton.directory
 
-    def on_convert_button(self):
+    def onApplydialogfolderbuttonsplit(self):
+        self.dir_split = self.dialogfolderbutton_split.directory
 
+    def on_convert_button(self):
         input = self.input_file_selector.currentPath.encode('utf-8')
         output = self.output_file_selector.currentPath.encode('utf-8')
         _, input_ext = os.path.splitext(input)
@@ -221,8 +247,32 @@ class IMAG2UtilitiesWidget:
             with Parallel(n_jobs=cpu_count(), backend='threading') as parallel:
                 parallel(delayed(anonymize)(root, files) for root, _, files in walk(self.dir))
 
-    def on_reload(self):
+    def on_split_button(self):
+        if self.dir_split:
+            for dir in os.listdir(self.dir_split):
+                dir = os.path.abspath(os.path.join(self.dir_split, dir))
+                if os.path.isdir(dir):
+                    seg, affine = load_nii(glob.glob(os.path.join(dir, "*.nii*"))[0])
+                    tracts = glob.glob(os.path.join(dir, "*.vtk"))
+                    right_side = np.zeros(seg.shape)
+                    right_side[(seg == 7) | (seg == 16) | (seg == 19) | (seg == 22) | (seg == 25)] = 1
+                    left_side = np.zeros(seg.shape)
+                    left_side[(seg == 8) | (seg == 17) | (seg == 20) | (seg == 23) | (seg == 26)] = 1
+                    for tract in tracts:
+                        lines = read_vtk(tract)[0]
+                        right_tracts = []
+                        left_tracts = []
+                        for i, s in enumerate(streamlines_mapvolume(lines, right_side, affine)):
+                            if np.count_nonzero(s) > 0:
+                                right_tracts.append(lines[i])
+                        for i, s in enumerate(streamlines_mapvolume(lines, left_side, affine)):
+                            if np.count_nonzero(s) > 0:
+                                left_tracts.append(lines[i])
 
+                        save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Right.vtk')), right_tracts)
+                        save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Left.vtk')), left_tracts)
+
+    def on_reload(self):
         print('\n' * 2)
         print('-' * 30)
         print('Reloading module: ' + self.module_name)
@@ -268,6 +318,11 @@ class IMAG2UtilitiesTest(unittest.TestCase):
 
     def run_test(self, scenario=None):
         pass
+
+
+def load_nii(fname):
+    img = nib.load(fname)
+    return img.get_data(), img.affine
 
 
 def read_tck(filename):
@@ -431,6 +486,14 @@ def anonymize(root, files):
             ds.save_as(file)
         except:
             pass
+
+
+def streamlines_mapvolume(streamlines, volume, affine):
+    inverse = np.linalg.inv(affine)
+    streamlines = [apply_affine(inverse, np.array(s)) for s in streamlines]
+    mapping = values_from_volume(volume, streamlines)
+
+    return mapping
 
 
 def del_callback(ds, data_element):
