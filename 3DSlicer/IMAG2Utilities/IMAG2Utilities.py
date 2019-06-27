@@ -252,25 +252,31 @@ class IMAG2UtilitiesWidget:
             for dir in os.listdir(self.dir_split):
                 dir = os.path.abspath(os.path.join(self.dir_split, dir))
                 if os.path.isdir(dir):
-                    seg, affine = load_nii(glob.glob(os.path.join(dir, "*.nii*"))[0])
-                    tracts = glob.glob(os.path.join(dir, "*.vtk"))
-                    right_side = np.zeros(seg.shape)
-                    right_side[(seg == 7) | (seg == 16) | (seg == 19) | (seg == 22) | (seg == 25)] = 1
-                    left_side = np.zeros(seg.shape)
-                    left_side[(seg == 8) | (seg == 17) | (seg == 20) | (seg == 23) | (seg == 26)] = 1
-                    for tract in tracts:
-                        lines = read_vtk(tract)[0]
-                        right_tracts = []
-                        left_tracts = []
-                        for i, s in enumerate(streamlines_mapvolume(lines, right_side, affine)):
-                            if np.count_nonzero(s) > 0:
-                                right_tracts.append(lines[i])
-                        for i, s in enumerate(streamlines_mapvolume(lines, left_side, affine)):
-                            if np.count_nonzero(s) > 0:
-                                left_tracts.append(lines[i])
+                    seg_path = glob.glob(os.path.join(dir, "*.nii*"))
+                    if len(seg_path) > 0:
+                        seg, affine = load_nii(seg_path[0])
+                        tracts = glob.glob(os.path.join(dir, "*.vtk"))
+                        right_side = np.zeros(seg.shape)
+                        right_side[(seg == 7) | (seg == 16) | (seg == 19) | (seg == 22) | (seg == 25)] = 1
+                        left_side = np.zeros(seg.shape)
+                        left_side[(seg == 8) | (seg == 17) | (seg == 20) | (seg == 23) | (seg == 26)] = 1
+                        for tract in tracts:
+                            lines = read_vtk(tract)[0]
+                            right_tracts = []
+                            left_tracts = []
+                            for i, s in enumerate(streamlines_mapvolume(lines, right_side, affine)):
+                                if np.count_nonzero(s) > 0:
+                                    right_tracts.append(lines[i])
+                            for i, s in enumerate(streamlines_mapvolume(lines, left_side, affine)):
+                                if np.count_nonzero(s) > 0:
+                                    left_tracts.append(lines[i])
 
-                        save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Right.vtk')), right_tracts)
-                        save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Left.vtk')), left_tracts)
+                            if len(right_tracts) > 0:
+                                save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Right.vtk')), right_tracts)
+                            if len(left_tracts) > 0:
+                                save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Left.vtk')), left_tracts)
+                else:
+                    print('Skipped {}'.format(dir))
 
     def on_reload(self):
         print('\n' * 2)
