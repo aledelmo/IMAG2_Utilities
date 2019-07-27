@@ -10,6 +10,7 @@ import numpy as np
 import pydicom
 import qt
 import slicer
+import tempfile
 import vtk
 from joblib import Parallel, delayed, cpu_count
 from nibabel.streamlines.tck import TckFile as tck
@@ -75,6 +76,7 @@ class IMAG2UtilitiesWidget:
             self.developerMode = settings.value('Developer/DeveloperMode') is True
 
         self.logic = IMAG2UtilitiesLogic()
+        self.tmp = tempfile.mkdtemp()
 
         if not parent:
             self.parent = slicer.qMRMLWidget()
@@ -170,6 +172,62 @@ class IMAG2UtilitiesWidget:
         self.split_button.enabled = True
         self.split_button.connect('clicked(bool)', self.on_split_button)
         split_form_layout.addRow(self.split_button)
+
+        dice_collapsible_button = ctk.ctkCollapsibleButton()
+        dice_collapsible_button.text = 'Dice Score'
+
+        self.layout.addWidget(dice_collapsible_button)
+
+        dice_form_layout = qt.QFormLayout(dice_collapsible_button)
+
+        label_dice = qt.QLabel()
+        label_dice.setText(
+            "Compute DICE score between two binary masks.")
+        dice_form_layout.addRow(label_dice)
+
+        self.mask1Selector = slicer.qMRMLNodeComboBox()
+        self.mask1Selector.nodeTypes = ['vtkMRMLLabelMapVolumeNode']
+        self.mask1Selector.selectNodeUponCreation = True
+        self.mask1Selector.addEnabled = False
+        self.mask1Selector.removeEnabled = False
+        self.mask1Selector.noneEnabled = False
+        self.mask1Selector.showHidden = False
+        self.mask1Selector.renameEnabled = False
+        self.mask1Selector.showChildNodeTypes = False
+        self.mask1Selector.setMRMLScene(slicer.mrmlScene)
+
+        self.mask1Node = self.mask1Selector.currentNode()
+
+        self.mask1Selector.connect('nodeActivated(vtkMRMLNode*)', self.onmask1Select)
+
+        dice_form_layout.addRow("Mask 1", self.mask1Selector)
+
+        self.mask2Selector = slicer.qMRMLNodeComboBox()
+        self.mask2Selector.nodeTypes = ['vtkMRMLLabelMapVolumeNode']
+        self.mask2Selector.selectNodeUponCreation = True
+        self.mask2Selector.addEnabled = False
+        self.mask2Selector.removeEnabled = False
+        self.mask2Selector.noneEnabled = False
+        self.mask2Selector.showHidden = False
+        self.mask2Selector.renameEnabled = False
+        self.mask2Selector.showChildNodeTypes = False
+        self.mask2Selector.setMRMLScene(slicer.mrmlScene)
+
+        self.mask2Node = self.mask2Selector.currentNode()
+
+        self.mask2Selector.connect('nodeActivated(vtkMRMLNode*)', self.onmask2Select)
+
+        dice_form_layout.addRow("Mask 2", self.mask2Selector)
+
+        self.dice_button = qt.QPushButton('Compute DICE')
+        self.dice_button.enabled = True
+        self.dice_button.connect('clicked(bool)', self.on_dice_button)
+        dice_form_layout.addRow(self.dice_button)
+
+        self.dice_result = qt.QLabel()
+        self.dice_result.setText(
+            "DICE = ...")
+        dice_form_layout.addRow(self.dice_result)
 
         self.layout.addStretch(1)
 
@@ -272,11 +330,38 @@ class IMAG2UtilitiesWidget:
                                     left_tracts.append(lines[i])
 
                             if len(right_tracts) > 0:
-                                save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Right.vtk')), right_tracts)
+                                save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Right.vtk')),
+                                         right_tracts)
                             if len(left_tracts) > 0:
-                                save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Left.vtk')), left_tracts)
+                                save_vtk(os.path.abspath(os.path.join(dir, os.path.basename(tract) + '_Left.vtk')),
+                                         left_tracts)
                 else:
                     print('Skipped {}'.format(dir))
+
+    def onmask1Select(self):
+        self.mask1Node = self.mask1Selector.currentNode()
+
+    def onmask2Select(self):
+        self.mask2Node = self.mask2Selector.currentNode()
+
+    def on_dice_button(self):
+        if self.mask1Node and self.mask2Node:
+            mask1_path = os.path.join(self.tmp, 'mask1.nii')
+            properties = {'useCompression': 0}
+            slicer.util.saveNode(self.mask1Node, mask1_path, properties)
+
+            mask2_path = os.path.join(self.tmp, 'mask2.nii')
+            properties = {'useCompression': 0}
+            slicer.util.saveNode(self.mask2Node, mask2_path, properties)
+
+            mask1, _ = load_nii(mask1_path)
+            mask2, _ = load_nii(mask2_path)
+
+            mask1 = mask1.astype(np.uint8)
+            mask2 = mask2.astype(np.uint8)
+
+            self.dice_result.setText(
+                "DICE = {}".format(np.sum(mask1[mask1 == mask2]) * 2.0 / (np.sum(mask1) + np.sum(mask2))))
 
     def on_reload(self):
         print('\n' * 2)
@@ -327,7 +412,7 @@ class IMAG2UtilitiesTest(unittest.TestCase):
 
 
 def load_nii(fname):
-    img = nib.load(fname)
+    img = nib.as_closest_canonical(nib.load(fname))
     return img.get_data(), img.affine
 
 
