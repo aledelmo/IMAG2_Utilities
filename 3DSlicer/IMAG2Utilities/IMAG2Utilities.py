@@ -279,8 +279,8 @@ class IMAG2UtilitiesWidget:
         self.dir_split = self.dialogfolderbutton_split.directory
 
     def on_convert_button(self):
-        input = self.input_file_selector.currentPath.encode('utf-8')
-        output = self.output_file_selector.currentPath.encode('utf-8')
+        input = self.input_file_selector.currentPath
+        output = self.output_file_selector.currentPath
         _, input_ext = os.path.splitext(input)
         _, output_ext = os.path.splitext(output)
         supported_formats = ('.tck', '.trk', '.vtk', '.xml', '.vtp')
