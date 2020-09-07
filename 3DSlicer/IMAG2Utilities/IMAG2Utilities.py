@@ -219,6 +219,10 @@ class IMAG2UtilitiesWidget:
 
         dice_form_layout.addRow("Mask 2", self.mask2Selector)
 
+        self.cut_to_bbox = qt.QCheckBox('Cut to BBox')
+        self.cut_to_bbox.setChecked(False)
+        dice_form_layout.addRow(self.cut_to_bbox)
+
         self.dice_button = qt.QPushButton('Compute DICE')
         self.dice_button.enabled = True
         self.dice_button.connect('clicked(bool)', self.on_dice_button)
@@ -360,8 +364,18 @@ class IMAG2UtilitiesWidget:
             mask1 = mask1.astype(np.uint8)
             mask2 = mask2.astype(np.uint8)
 
+            if self.cut_to_bbox.isChecked():
+                x, y, z = np.where(mask1)
+                x = sorted(x)
+                y = sorted(y)
+                z = sorted(z)
+                bbox = (slice(x[0], x[-1]), slice(y[0], y[-1]), slice(z[0], z[-1]))
+                mask = np.zeros(mask1.shape)
+                mask[bbox] = mask2[bbox]
+                mask2 = mask
+
             self.dice_result.setText(
-                "DICE = {}".format(np.sum(mask1[mask1 == mask2]) * 2.0 / (np.sum(mask1) + np.sum(mask2))))
+                "DICE = {:.2f}".format(100 * np.sum(mask1[mask1 == mask2]) * 2.0 / (np.sum(mask1) + np.sum(mask2))))
 
     def on_reload(self):
         print('\n' * 2)
