@@ -11,11 +11,6 @@ from nibabel.streamlines.tck import TckFile as Tck
 from nibabel.streamlines.tractogram import Tractogram
 from nibabel.streamlines.trk import TrkFile as Trk
 
-try:
-    from itertools import izip as zip
-except ImportError:
-    pass
-
 __author__ = 'Alessandro Delmonte'
 __email__ = 'delmonte.ale92@gmail.com'
 
