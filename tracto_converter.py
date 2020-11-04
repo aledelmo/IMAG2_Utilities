@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 import os
 import sys
-from builtins import range
-import numpy as np
 import vtk
-from nibabel.streamlines.tck import TckFile as tck
-from nibabel.streamlines.tractogram import Tractogram
-from nibabel.streamlines.trk import TrkFile as tv
+import argparse
+import numpy as np
 from vtk.util import numpy_support as ns
+from nibabel.streamlines.tck import TckFile as Tck
+from nibabel.streamlines.tractogram import Tractogram
+from nibabel.streamlines.trk import TrkFile as Trk
 
 try:
     from itertools import izip as zip
@@ -128,13 +127,13 @@ def read_trk(filename):
 
 def save_tck(filename, tracts, header):
     tractogram = Tractogram(tracts, affine_to_rasmm=np.eye(4))
-    tck_obj = tck(tractogram, header)
+    tck_obj = Tck(tractogram, header)
     tck_obj.save(filename)
 
 
 def save_trk(filename, tracts, header):
     tractogram = Tractogram(tracts, affine_to_rasmm=np.eye(4))
-    trk_obj = tv(tractogram, header)
+    trk_obj = Trk(tractogram, header)
     trk_obj.save(filename)
 
 

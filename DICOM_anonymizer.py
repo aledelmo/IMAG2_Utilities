@@ -1,24 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
-import os.path
 import sys
 import random
 import string
 import pydicom
-from builtins import range
+import os.path
+import argparse
+from os import walk
+from joblib import Parallel, delayed, cpu_count
 
-try:
-    from os import scandir, walk
-except ImportError:
-    from scandir import scandir, walk
-try:
-    from joblib import Parallel, delayed, cpu_count
-
-    par = True
-except:
-    par = False
 
 __author__ = 'Alessandro Delmonte'
 __email__ = 'delmonte.ale92@gmail.com'
@@ -31,14 +22,9 @@ def main():
         sys.stdout = open(os.devnull, 'w')
         sys.stderr = open(os.devnull, 'w')
 
-    if par:
-        print('Parallel computing enabled')
-        with Parallel(n_jobs=cpu_count(), backend='threading') as parallel:
-            parallel(delayed(anonymize)(root, files) for root, _, files in walk(dir_path))
-    else:
-        print('Parallel computing not available (install joblib)')
-        for root, _, files in walk(dir_path):
-            anonymize(root, files)
+    print('Parallel computing enabled')
+    with Parallel(n_jobs=cpu_count(), backend='threading') as parallel:
+        parallel(delayed(anonymize)(root, files) for root, _, files in walk(dir_path))
 
 
 def anonymize(root, files):

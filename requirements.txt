@@ -1,0 +1,6 @@
+opencv
+pynrrd
+pydicom
+joblib
+nibabel
+vtk==8.2.0

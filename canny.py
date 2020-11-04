@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 import os
 import sys
-
 import cv2
 import nrrd
 import numpy as np
+import argparse
 
 
 __author__ = 'Alessandro Delmonte'
 __email__ = 'delmonte.ale92@gmail.com'
+
 
 def nothing(_):
     pass
@@ -22,7 +22,6 @@ def main():
 
     frames, _ = nrrd.read(filename)
     frames = frames.astype('float32')
-    # nrrd.write(out_file, img.astype('float32'), _) 3DSlicer converter
     frames = 128 * ((frames - np.amin(frames)) / np.amax(frames))
 
     cv2.namedWindow('image', cv2.WINDOW_NORMAL)
