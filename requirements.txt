@@ -1,8 +1,4 @@
-opencv
-pynrrd
 pydicom
 joblib
 nibabel
-pandas
-seaborn
 vtk==8.2.0
