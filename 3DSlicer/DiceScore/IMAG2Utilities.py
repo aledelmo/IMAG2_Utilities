@@ -136,7 +136,7 @@ class IMAG2UtilitiesWidget:
 
         self.dice_result = qt.QLabel()
         self.dice_result.setText(
-            "DICE = ...")
+            "DICE = ... ; IOU = ...")
         dice_form_layout.addRow(self.dice_result)
 
         self.layout.addStretch(1)
@@ -201,7 +201,9 @@ class IMAG2UtilitiesWidget:
             mask2 = mask2.astype(np.uint8)
 
             self.dice_result.setText(
-                "DICE = {:.2f}".format(self.logic.dice(mask1, mask2, self.cut_to_bbox.isChecked())))
+                "DICE = {:.2f} ; IOU = {:.2f}".format(self.logic.dice(mask1, mask2, self.cut_to_bbox.isChecked()),
+                                                      self.logic.dice(mask1, mask2, self.cut_to_bbox.isChecked(), iou=True)
+                                                      ))
 
     def on_reload(self):
         print('\n' * 2)
@@ -233,7 +235,7 @@ class IMAG2UtilitiesWidget:
 
 class IMAG2UtilitiesLogic:
     @staticmethod
-    def dice(m1, m2, cut=False):
+    def dice(m1, m2, cut=False, iou=False):
         if cut:
             x, y, z = np.where(m1)
             x = sorted(x)
@@ -243,7 +245,10 @@ class IMAG2UtilitiesLogic:
             mask = np.zeros(m1.shape)
             mask[bbox] = m2[bbox]
             m2 = mask
-        return 100 * np.sum(m1[m1 == m2]) * 2.0 / (np.sum(m1) + np.sum(m2))
+        if iou:
+            return 100 * (m1*m2).sum()/float((np.logical_or(m1, m2)).sum())
+        else:
+            return 100 * (m1*m2).sum() * 2.0 / float(m1.sum() + m2.sum())
 
 
 class IMAG2UtilitiesTest(unittest.TestCase):
