@@ -2,6 +2,8 @@
 
 Medical imaging utility scripts. Anonymization, Converters, Scores.
 
+![intro](https://i.imgur.com/xheDkcR.png)
+
 ### DICOM Anonymization
 
 Given an existing folder, this tool proceeds to anonymize any DICOM files, removing all the sensible information
@@ -34,11 +36,12 @@ Example:
 $ python tracto_converter.py tracto.tck vtk
 ```
 
-### Dice Score
+### Dice Score & IOU
 
-Sørensen–Dice coefficient computation between two binary masks. Score computed as:
+Sørensen–Dice coefficient and IOU coefficient computation between two binary masks.
 
 DSC = 2 * TP / (2 * TP + FP + FN)
+IOU = TP / (TP + FP + FN)
 
 Implementation as 3D Slicer plug-in.
 
